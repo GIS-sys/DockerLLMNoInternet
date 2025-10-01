@@ -21,5 +21,5 @@ RUN python3 -c "from transformers import pipeline; pipeline('text-generation', m
 ENTRYPOINT ["python3", "-c"]
 
 # Set a default command that uses the model. This can be overridden at runtime.
-CMD ["from transformers import pipeline; gen = pipeline('text-generation', model='LiquidAI/LFM2-350M-Extract'); print(gen('What is Docker?', max_length=50)[0]['generated_text'])"]
+CMD ["from transformers import pipeline; gen = pipeline('text-generation', model='LiquidAI/LFM2-350M-Extract'); print(gen('<|startoftext|><|im_start|>system\\nReturn data as a JSON object with the following schema:\\n[...]<|im_end|>\\n<|im_start|>user\\nCaenorhabditis elegans is a free-living transparent nematode about 1 mm in length that lives in temperate soil environments.<|im_end|>\\n<|im_start|>assistant', max_length=50)[0]['generated_text'])"]
 
