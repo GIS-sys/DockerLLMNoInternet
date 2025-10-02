@@ -1,15 +1,28 @@
+import huggingface_hub
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 model_name = "Qwen/Qwen3-0.6B"
+local_path = "model_cache/" + model_name
 
 def main(prompt: str = 'Solve x*2+3=10'):
-    # load the tokenizer and the model
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name,
-        torch_dtype="auto",
-        device_map="auto"
-    )
+    try:
+        # local
+        tokenizer = AutoTokenizer.from_pretrained(local_path)
+        model = AutoModelForCausalLM.from_pretrained(
+            local_path,
+            torch_dtype="auto",
+            device_map="auto"
+        )
+    except (OSError, huggingface_hub.errors.HFValidationError):
+        # load the tokenizer and the model
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            torch_dtype="auto",
+            device_map="auto"
+        )
+        tokenizer.save_pretrained(local_path)
+        model.save_pretrained(local_path)
 
     # prepare the model input
     messages = [
@@ -46,54 +59,3 @@ def main(prompt: str = 'Solve x*2+3=10'):
 if __name__ == "__main__":
     main()
 
-
-
-#import os
-#from transformers import pipeline, AutoModelForCausalLM, AutoTokenizer
-#
-#
-#cache_dir = "./model_cache"
-#model_name = 'LiquidAI/LFM2-350M-Extract'
-#PROMPT = """<|startoftext|><|im_start|>system
-#Return data as a JSON object with the following schema:
-#[...]<|im_end|>
-#<|im_start|>user
-#Caenorhabditis elegans is a free-living transparent nematode about 1 mm in length that lives in temperate soil environments.<|im_end|>
-#<|im_start|>assistant"""
-#
-#
-#def load_model_with_fallback():
-#
-#    try:
-#        # First, try to load from cache without internet
-#        print("Attempting to load model from cache...")
-#        model = AutoModelForCausalLM.from_pretrained(cache_dir, local_files_only=True)
-#        tokenizer = AutoTokenizer.from_pretrained(cache_dir, local_files_only=True)
-#        print("✓ Model loaded from local cache")
-#        return pipeline('text-generation', model=model, tokenizer=tokenizer)
-#
-#    except Exception as e:
-#        print(f"Model not found in cache: {e}")
-#        print("Downloading model (internet connection required)...")
-#
-#        # Download and cache the model
-#        model = AutoModelForCausalLM.from_pretrained(model_name, cache_dir=cache_dir)
-#        tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
-#
-#        # Explicitly save to our cache directory
-#        model.save_pretrained(cache_dir)
-#        tokenizer.save_pretrained(cache_dir)
-#        print("✓ Model downloaded and cached locally")
-#
-#        return pipeline('text-generation', model=model, tokenizer=tokenizer)
-#
-#
-#gen = load_model_with_fallback()
-#
-#result = gen(
-#    PROMPT,
-#    max_length=50
-#)[0]['generated_text']
-#
-#
-#print(result)
