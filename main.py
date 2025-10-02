@@ -1,8 +1,10 @@
 import huggingface_hub
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+
 model_name = "Qwen/Qwen3-0.6B"
 local_path = "model_cache/" + model_name
+
 
 def main(prompt: str = 'Solve x*2+3=10'):
     try:
@@ -55,6 +57,7 @@ def main(prompt: str = 'Solve x*2+3=10'):
 
     print("thinking content:", thinking_content)
     print("content:", content)
+
 
 if __name__ == "__main__":
     main()
