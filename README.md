@@ -29,6 +29,8 @@ docker run --rm -v ./src:/app/run --gpus all fips-llm python -c 'import torch; p
 
 ```
 
+On Windows you might need to change ./src to .\src
+
 # Package
 
 ```bash
