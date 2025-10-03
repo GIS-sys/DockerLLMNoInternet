@@ -3,7 +3,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 model_name = "Qwen/Qwen3-0.6B"
-# model_name = "openai/gpt-oss-20b"
+#model_name = "openai/gpt-oss-20b"
 local_path = "model_cache/" + model_name
 
 

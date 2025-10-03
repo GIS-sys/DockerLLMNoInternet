@@ -18,6 +18,8 @@ sudo dockerd &
 docker build -t fips-llm .
 ```
 
+If this takes too long - try sudo
+
 # Run
 
 ```bash
