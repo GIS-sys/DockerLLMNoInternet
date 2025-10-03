@@ -1,6 +1,7 @@
 *.tar
 **/__pycache__/
 **/tmp/
+**/condaenv.*.requirements.txt
 
 **/model_cache/
 
