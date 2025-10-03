@@ -1,47 +1,45 @@
+# Use the specified Ubuntu base image
 FROM ubuntu:24.04
 
-
-WORKDIR /app
-
-ENV PATH="/root/miniconda3/bin:${PATH}"
-ARG PATH="/root/miniconda3/bin:${PATH}"
+# Set environment variables to avoid interactive prompts during installation
 ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Etc/UTC
 
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    wget \
+    bash \
+    libxau-dev \
+    git \
+    build-essential \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update --fix-missing && DEBIAN_FRONTEND=noninteractive apt-get install --assume-yes --no-install-recommends \
-    wget bash libxau-dev git build-essential;
-# install miniconda
-RUN arch=$(uname -m) && \
-    if [ "$arch" = "x86_64" ]; then \
-    MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh"; \
-    elif [ "$arch" = "aarch64" ]; then \
-    MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.sh"; \
-    else \
-    echo "Unsupported architecture: $arch"; \
-    exit 1; \
-    fi && \
-    wget --no-check-certificate $MINICONDA_URL -O miniconda.sh && \
-    mkdir -p /root/.conda;
-RUN bash miniconda.sh -b -p /root/miniconda3;
-RUN rm -f miniconda.sh;
+# Download and install Miniforge3 (which includes mamba)
+RUN wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname -s)-$(uname -m).sh -O miniforge_install.sh && \
+    bash miniforge_install.sh -b -p /opt/miniforge3 && \
+    rm miniforge_install.sh
 
-RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
-    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r;
+# Add Miniforge3 to the system PATH
+ENV PATH="/opt/miniforge3/bin:${PATH}"
 
+# Make RUN commands use the bash shell
+SHELL ["/bin/bash", "-c"]
 
-COPY environment.yaml ./environment.yaml
-RUN export PIP_LOG="/tmp/pip_log.txt" && \
-    touch ${PIP_LOG} && \
-    tail -f ${PIP_LOG} & conda env create --name llm --file=environment.yaml -v;
+# Copy the environment file and create the Conda environment
+COPY environment.yaml /tmp/environment.yaml
+RUN yes Y | mamba env create -v -f /tmp/environment.yaml
 
-SHELL ["conda", "run", "-n", "llm", "--no-capture-output", "/bin/bash", "-c"]
+# Activate the environment and set PATH for subsequent commands
+# The environment name is extracted from the environment.yaml file
+RUN echo "source activate $(head -1 /tmp/environment.yaml | cut -d' ' -f2)" > ~/.bashrc
+ENV PATH /opt/miniforge3/envs/$(head -1 /tmp/environment.yaml | cut -d' ' -f2)/bin:$PATH
 
+RUN which python
 
-WORKDIR /app/run
-# COPY ./main.py ./main.py
-# RUN python -c "from main import main; main()"
+COPY requirements.txt /tmp/requirements.txt
+RUN yes | pip install -r /tmp/requirements.txt
 
-
-ENTRYPOINT ["conda", "run", "-n", "llm", "--no-capture-output", "/bin/bash", "-c"]
-CMD ["python -c 'import torch; print(torch.cuda.is_available()); from main import main; main()'"]
-
+# Default command: test PyTorch and CUDA
+CMD ["python", "-c", "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"]

@@ -5,17 +5,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python==3.10
+  - python=3.10
   - pip
-  - pytorch-gpu==1.11.0
-  - pytorch-cuda==12.4
-  - pip:
-    - --extra-index-url https://download.pytorch.org/whl/cu125
-    - torch==2.8.0
-    - transformers==4.56.2
-    # - transformers[sentencepiece]==4.55.0
-    - accelerate==1.10.1
-    - kernels==0.10.2
-    - python-multipart==0.0.20
-    # - sentencepiece==0.2.0
-    - bitsandbytes==0.48.1
+  - pytorch-gpu=1.11.0
+  - pytorch-cuda=12.4
