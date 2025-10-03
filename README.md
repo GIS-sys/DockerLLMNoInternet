@@ -15,7 +15,7 @@ sudo dockerd &
 # Build
 
 ```bash
-docker build -t fips-llm .
+docker build --progress=plain -t fips-llm .
 ```
 
 If this takes too long - try sudo
@@ -23,9 +23,9 @@ If this takes too long - try sudo
 # Run
 
 ```bash
-docker run -v ./src:/app/run --gpus all fips-llm
+docker run --rm -v ./src:/app/run --gpus all fips-llm
 # OR
-docker run -v ./src:/app/run --gpus all fips-llm "python -c 'import torch; print(torch.cuda.is_available()); from main import main; main()'"
+docker run --rm -v ./src:/app/run --gpus all fips-llm python -c 'import torch; print(torch.cuda.is_available()); from main import main; main()'
 
 ```
 
