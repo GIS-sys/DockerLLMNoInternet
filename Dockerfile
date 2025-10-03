@@ -16,6 +16,7 @@ WORKDIR /app/runtime
 COPY ./main.py ./main.py
 RUN python3 -c "from main import main; main()"
 
-ENTRYPOINT ["python3", "-c"]
-CMD ["from main import main; main('Hello, how are you?')"]
+CMD ["python3", "--version"]
+#ENTRYPOINT ["python3", "-c"]
+#CMD ["from main import main; main('Hello, how are you?')"]
 
