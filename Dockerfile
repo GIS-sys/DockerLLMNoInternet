@@ -9,7 +9,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 
 RUN apt-get update --fix-missing && DEBIAN_FRONTEND=noninteractive apt-get install --assume-yes --no-install-recommends \
-    wget bash libxau-dev git;
+    wget bash libxau-dev git build-essential;
 # install miniconda
 RUN arch=$(uname -m) && \
     if [ "$arch" = "x86_64" ]; then \
