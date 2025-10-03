@@ -1,4 +1,4 @@
-name: asr_llm
+name: llm
 channels:
   - pytorch
   - nvidia

@@ -1,4 +1,6 @@
 *.tar
-__pycache__/
-tmp/
+**/__pycache__/
+**/tmp/
+
+**/model_cache/
 
