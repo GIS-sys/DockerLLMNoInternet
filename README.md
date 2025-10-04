@@ -25,7 +25,7 @@ If this takes too long - try sudo
 ```bash
 docker run --rm -v ./src:/app/run --gpus all fips-llm
 # OR
-docker run --rm -v ./src:/app/run --gpus all fips-llm python -c 'import torch; print(torch.cuda.is_available()); from main import main; main()'
+docker run --rm -v ./src:/app/run --gpus all fips-llm python -c -u 'import torch; print(torch.cuda.is_available()); from main import main; main()'
 
 ```
 
