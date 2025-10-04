@@ -44,4 +44,4 @@ RUN yes | pip install -r /tmp/requirements.txt
 WORKDIR /app/run
 
 # Default command: test PyTorch and CUDA
-CMD ["python", "-c", "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"]
+CMD ["python", "-u", "-c", "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"]
