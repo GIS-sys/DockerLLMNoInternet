@@ -29,13 +29,13 @@ You need to rerun this only if you change one of the:
 On a machine with access to the internet:
 
 ```bash
-docker run --rm -v ./src:/app/run -v ./src/huggingface:/root/.cache/huggingface --gpus all fips-llm python -u -c 'from main import main; main('\''Answer shortly: what is 2+2*2?'\'')'
+docker run --rm -v ./src/code:/app/run -v ./src/model_cache:/app/model_cache -v ./src/huggingface:/root/.cache/huggingface --gpus all fips-llm python -u -c 'from main import main; main('\''Answer shortly: what is 2+2*2?'\'')'
 ```
 
 On a machine without the internet:
 
 ```bash
-docker run --rm -v ./src:/app/run -v ./src/huggingface:/root/.cache/huggingface --gpus all fips-llm /bin/bash -c "HF_HUB_OFFLINE=1 python -u -c 'from main import main; main('\''Answer shortly: what is 2+2*2?'\'')'"
+docker run --rm -v ./src/code:/app/run -v ./src/model_cache:/app/model_cache -v ./src/huggingface:/root/.cache/huggingface --gpus all fips-llm /bin/bash -c "HF_HUB_OFFLINE=1 python -u -c 'from main import main; main('\''Answer shortly: what is 2+2*2?'\'')'"
 ```
 
 On Windows you might need to change ./src to .\src and ./src/huggingface to .\src\huggingface
@@ -65,6 +65,10 @@ Only transfer this folder if volumes were changed. You don't need to rebuild doc
 ### Main script
 
 Only transfer this if the main.py was changed. You don't need to rebuild docker image each time main.py changes
+
+### In general
+
+You could just package and deliver the whole src/ folder, but it will be very large in size, so choose wisely
 
 # Useful info
 
