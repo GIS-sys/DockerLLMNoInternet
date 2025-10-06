@@ -7,116 +7,122 @@ from typing import Dict, Any
 from basemodels import PromptRequest, PromptResponse
 
 
-class Models:
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def get_current_model() -> str:
-        return "bbbbb"
-
-    @staticmethod
-    def get_models_list() -> list[str]:
-        return ["a", "bbbbb", "c"]
-
-    @staticmethod
-    def process_request(request: PromptRequest) -> PromptResponse:
-        return PromptResponse(**Models.process(request.prompt, request.model_name, request.max_new_tokens))
-
-    @staticmethod
-    def process(prompt: str, model_name: str, max_new_tokens: int) -> Dict[str, str]:
-        """
-        Replace this function with your actual implementation.
-        This is a mock function that simulates processing.
-        """
-        # Simulate some processing logic
-        thinking_text = f"Processing prompt: '{prompt}' with model {model_name}"
-        final_text = f"Generated response using {model_name} with {max_new_tokens} tokens"
-        import time
-        time.sleep(1)
-        return {
-            "thinking": thinking_text,
-            "final": final_text
-        }
-
-model_name = "Qwen/Qwen3-0.6B"
-# model_name = "openai/gpt-oss-20b"
-
-LOCAL_PATH = "../model_cache/" + model_name
 SAVE_TO_LOCAL = False
+MODELS = ["Qwen/Qwen3-0.6B", "openai/gpt-oss-20b"]
 
 
+class Models:
+    initialized = False
+    current_model = ""
 
+    @classmethod
+    def init(cls):
+        if cls.initialized:
+            return
+        cls.initialized = True
+        cls.load_model(cls.get_models_list()[1])
 
+    @classmethod
+    def get_current_model(cls) -> str:
+        cls.init()
+        return cls.current_model
 
+    @classmethod
+    def get_current_local_path(cls) -> str:
+        cls.init()
+        return "../model_cache/" + cls.get_current_model()
 
+    @classmethod
+    def get_models_list(cls) -> list[str]:
+        cls.init()
+        return MODELS
 
+    @classmethod
+    def process_request(cls, request: PromptRequest) -> PromptResponse:
+        cls.init()
+        return PromptResponse(**Models.process(prompt=request.prompt, model_name=request.model_name, max_new_tokens=request.max_new_tokens))
 
-def main(prompt: str = 'Answer with a simple Hello, nothing more'):
-    try:
-        # local saved
-        tokenizer = AutoTokenizer.from_pretrained(LOCAL_PATH, local_files_only=True)
-        model = AutoModelForCausalLM.from_pretrained(
-            LOCAL_PATH,
-            torch_dtype="auto",
-            device_map="auto",
-            local_files_only=True,
-        )
-    except (OSError, huggingface_hub.errors.HFValidationError):
+    @classmethod
+    def load_model(cls, model_name: str):
+        cls.init()
+        if cls.get_current_model() == model_name:
+            return
+        if cls.get_current_model() != "":
+            raise Exception(f"Can't load a new model {model_name} when the last model {cls.get_current_model()} was loaded. Aborting")
+        cls.current_model = model_name
         try:
-            # local cache
-            tokenizer = AutoTokenizer.from_pretrained(model_name, local_files_only=True)
-            model = AutoModelForCausalLM.from_pretrained(
-                model_name,
+            # local saved
+            cls.tokenizer = AutoTokenizer.from_pretrained(cls.get_current_local_path(), local_files_only=True)
+            cls.model = AutoModelForCausalLM.from_pretrained(
+                cls.get_current_local_path(),
                 torch_dtype="auto",
                 device_map="auto",
                 local_files_only=True,
             )
         except (OSError, huggingface_hub.errors.HFValidationError):
-            # load the tokenizer and the model
-            tokenizer = AutoTokenizer.from_pretrained(model_name)
-            model = AutoModelForCausalLM.from_pretrained(
-                model_name,
-                torch_dtype="auto",
-                device_map="auto",
-            )
-            if SAVE_TO_LOCAL:
-                tokenizer.save_pretrained(LOCAL_PATH)
-                model.save_pretrained(LOCAL_PATH)
+            try:
+                # local cache
+                cls.tokenizer = AutoTokenizer.from_pretrained(model_name, local_files_only=True)
+                cls.model = AutoModelForCausalLM.from_pretrained(
+                    model_name,
+                    torch_dtype="auto",
+                    device_map="auto",
+                    local_files_only=True,
+                )
+            except (OSError, huggingface_hub.errors.HFValidationError):
+                # load the tokenizer and the model
+                cls.tokenizer = AutoTokenizer.from_pretrained(model_name)
+                cls.model = AutoModelForCausalLM.from_pretrained(
+                    model_name,
+                    torch_dtype="auto",
+                    device_map="auto",
+                )
+                if SAVE_TO_LOCAL:
+                    cls.tokenizer.save_pretrained(cls.get_current_local_path())
+                    cls.model.save_pretrained(cls.get_current_local_path())
 
-    # prepare the model input
-    messages = [
-        {"role": "user", "content": prompt}
-    ]
-    text = tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True,
-        enable_thinking=True # Switches between thinking and non-thinking modes. Default is True.
-    )
-    model_inputs = tokenizer([text], return_tensors="pt").to(model.device)
+    @classmethod
+    def parse_response(cls, model_name: str, response: str) -> tuple[str, str]:
+        if "<think>" in response and "</think>" in response:
+            tmp = response
+            tmp = tmp[tmp.index("<think>") + len("<think>"):]
+            thinking = tmp[:tmp.index("</think>")].strip("\n")
+            final = tmp[tmp.index("</think>") + len("</think>"):].strip("\n")
+            return thinking, final
+        if "analysis" in response and "assistantfinal" in response:
+            tmp = response
+            tmp = tmp[tmp.index("analysis") + len("analysis"):]
+            thinking = tmp[:tmp.index("assistantfinal")].strip("\n")
+            final = tmp[tmp.index("assistantfinal") + len("assistantfinal"):].strip("\n")
+            return thinking, final
+        return "", response
 
-    # conduct text completion
-    generated_ids = model.generate(
-        **model_inputs,
-        max_new_tokens=32768
-    )
-    output_ids = generated_ids[0][len(model_inputs.input_ids[0]):].tolist()
+    @classmethod
+    def process(cls, model_name: str, max_new_tokens: int = 32768, prompt: str = "Answer with a simple Hello, nothing more") -> Dict[str, str]:
+        cls.init()
+        cls.load_model(model_name)
 
-    # parsing thinking content
-    try:
-        # rindex finding 151668 (</think>)
-        index = len(output_ids) - output_ids[::-1].index(151668)
-    except ValueError:
-        index = 0
-
-    thinking_content = tokenizer.decode(output_ids[:index], skip_special_tokens=True).strip("\n")
-    content = tokenizer.decode(output_ids[index:], skip_special_tokens=True).strip("\n")
-
-    print("thinking content:", thinking_content)
-    print("content:", content)
-
-
-if __name__ == "__main__":
-    main()
+        # prepare the model input
+        messages = [
+            {"role": "user", "content": prompt}
+        ]
+        text = cls.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True,
+            enable_thinking=True,
+        )
+        model_inputs = cls.tokenizer([text], return_tensors="pt").to(cls.model.device)
+        # conduct text completion
+        generated_ids = cls.model.generate(
+            **model_inputs,
+            max_new_tokens=max_new_tokens,
+        )
+        output_ids = generated_ids[0][len(model_inputs.input_ids[0]):].tolist()
+        response = cls.tokenizer.decode(output_ids, skip_special_tokens=True)
+        thinking, final = cls.parse_response(model_name=model_name, response=response)
+        return {
+            "thinking": thinking,
+            "final": final,
+        }
 

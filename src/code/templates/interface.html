@@ -106,13 +106,13 @@
 <body>
     <div class="container">
         <h1>🤖 AI Prompt Interface</h1>
-        
+
         <form id="promptForm">
             <div class="form-group">
                 <label for="prompt">Prompt:</label>
                 <textarea id="prompt" name="prompt" placeholder="Enter your prompt here..."></textarea>
             </div>
-            
+
             <div class="form-group">
                 <label for="model_name">Model:</label>
                 <select id="model_name" name="model_name">
@@ -123,29 +123,29 @@
                     {% endfor %}
                 </select>
             </div>
-            
+
             <div class="form-group">
                 <label for="max_new_tokens">Max New Tokens:</label>
                 <input type="number" id="max_new_tokens" name="max_new_tokens" value="32768" min="1">
             </div>
-            
+
             <button type="submit" id="askButton">Ask</button>
-            
+
             <div class="loading" id="loading">
                 <div class="spinner"></div>
                 <p>Processing your request...</p>
             </div>
-            
+
             <div class="error-alert" id="errorAlert">
                 Error: Request failed. Please try again.
             </div>
         </form>
-        
+
         <div class="form-group">
             <label for="thinking">Thinking Process:</label>
             <textarea id="thinking" name="thinking" class="output-area" readonly></textarea>
         </div>
-        
+
         <div class="form-group">
             <label for="final">Final Response:</label>
             <textarea id="final" name="final" class="output-area" readonly></textarea>
@@ -155,23 +155,23 @@
     <script>
         document.getElementById('promptForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             const button = document.getElementById('askButton');
             const loading = document.getElementById('loading');
             const errorAlert = document.getElementById('errorAlert');
-            
+
             // Show loading state
             button.disabled = true;
             loading.style.display = 'block';
             errorAlert.style.display = 'none';
-            
+
             try {
                 const formData = {
                     prompt: document.getElementById('prompt').value,
                     model_name: document.getElementById('model_name').value,
                     max_new_tokens: parseInt(document.getElementById('max_new_tokens').value)
                 };
-                
+
                 const response = await fetch('/process-prompt', {
                     method: 'POST',
                     headers: {
@@ -179,17 +179,17 @@
                     },
                     body: JSON.stringify(formData)
                 });
-                
+
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`HTTP error! status: ${response.status}. Details: ${response.detail}`);
                 }
-                
+
                 const data = await response.json();
-                
+
                 // Update output areas
                 document.getElementById('thinking').value = data.thinking;
                 document.getElementById('final').value = data.final;
-                
+
             } catch (error) {
                 console.error('Error:', error);
                 errorAlert.style.display = 'block';
