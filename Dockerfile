@@ -44,4 +44,5 @@ RUN yes | pip install -r /tmp/requirements.txt;
 WORKDIR /app/run
 
 # Default command: test PyTorch and CUDA
-CMD ["python", "-u", "main.py"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "4"]
+

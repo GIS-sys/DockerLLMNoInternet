@@ -1,10 +1,8 @@
-import asyncio
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from typing import Optional
-import uuid
+import portalocker
 
 from ai import Models
 from basemodels import PromptRequest, PromptResponse
@@ -24,37 +22,43 @@ app.add_middleware(
 templates = Jinja2Templates(directory="templates")
 
 
-class RequestManager:
-    def __init__(self):
-        self.current_request: Optional[str] = None
-        self.lock = asyncio.Lock()
+class CustomLock:
+    def __init__(self, lock_name: str = "custom_lock"):
+        self.lock_file_path = f"/tmp/{lock_name}.lock"
+        self._file = None
 
-    async def try_acquire(self) -> bool:
-        async with self.lock:
-            if self.current_request is None:
-                self.current_request = str(uuid.uuid4())
-                return True
+    def acquire(self) -> bool:
+        try:
+            self._file = open(self.lock_file_path, 'a+')
+            portalocker.lock(self._file, portalocker.LOCK_EX | portalocker.LOCK_NB)
+            return True
+        except (portalocker.LockException, IOError):
+            if self._file:
+                self._file.close()
+                self._file = None
             return False
 
-    async def release(self):
-        async with self.lock:
-            self.current_request = None
-
-request_manager = RequestManager()
+    def release(self):
+        if self._file:
+            try:
+                portalocker.unlock(self._file)
+            finally:
+                self._file.close()
+                self._file = None
 
 
 @app.post("/process-prompt", response_model=PromptResponse)
 async def process_prompt(request: PromptRequest):
-    if not await request_manager.try_acquire():
+    lock = CustomLock()
+    if not lock.acquire():
         raise HTTPException(status_code=429, detail="Server is busy processing another request. Try again in a few seconds")
     try:
-        # Call the foo function with provided parameters
         result = Models.process_request(request)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Processing error: {str(e)}")
     finally:
-        await request_manager.release()
+        lock.release()
 
 
 @app.get("/", response_class=HTMLResponse)

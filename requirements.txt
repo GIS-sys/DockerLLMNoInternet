@@ -7,4 +7,5 @@ python-multipart==0.0.20
 bitsandbytes==0.48.1
 fastapi==0.118.0
 uvicorn==0.37.0
+portalocker==3.2.0
 
