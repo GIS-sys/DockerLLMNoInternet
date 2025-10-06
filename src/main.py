@@ -1,5 +1,6 @@
 import huggingface_hub
 from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
 
 
 # model_name = "Qwen/Qwen3-0.6B"
@@ -14,7 +15,8 @@ def main(prompt: str = 'Solve x*2+3=10'):
         model = AutoModelForCausalLM.from_pretrained(
             local_path,
             torch_dtype="auto",
-            device_map="auto"
+            device_map="auto",
+            local_files_only=True,
         )
     except (OSError, huggingface_hub.errors.HFValidationError):
         # load the tokenizer and the model
@@ -22,7 +24,7 @@ def main(prompt: str = 'Solve x*2+3=10'):
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
             torch_dtype="auto",
-            device_map="auto"
+            device_map="auto",
         )
         tokenizer.save_pretrained(local_path)
         model.save_pretrained(local_path)
@@ -62,4 +64,3 @@ def main(prompt: str = 'Solve x*2+3=10'):
 
 if __name__ == "__main__":
     main()
-
