@@ -79,12 +79,12 @@ You could just package and deliver the whole src/ folder, but it will be very la
 - To preserve symlinks, use archives to save folder:
 
   ```bash
-  tar --preserve-permissions -czvf SOMEFOLDER.tar.gz SOMEFOLDER/
+  tar --preserve-permissions -czvf src.tar.gz src/
   ```
 
   and to extract that later on the remote machine:
 
   ```bash
-  tar -xzvf SOMEFOLDER.tar.gz
+  tar -xzvf src.tar.gz
   ```
 
