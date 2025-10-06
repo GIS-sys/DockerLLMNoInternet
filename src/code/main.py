@@ -6,15 +6,16 @@ print("CUDA", ("is" if torch.cuda.is_available() else "isn't"), "available")
 
 # model_name = "Qwen/Qwen3-0.6B"
 model_name = "openai/gpt-oss-20b"
-local_path = "model_cache/" + model_name
+
+LOCAL_PATH = "../model_cache/" + model_name
 
 
 def main(prompt: str = 'Answer with a simple Hello, nothing more'):
     try:
         # local
-        tokenizer = AutoTokenizer.from_pretrained(local_path)
+        tokenizer = AutoTokenizer.from_pretrained(LOCAL_PATH)
         model = AutoModelForCausalLM.from_pretrained(
-            local_path,
+            LOCAL_PATH,
             torch_dtype="auto",
             device_map="auto",
             local_files_only=True,
@@ -27,8 +28,8 @@ def main(prompt: str = 'Answer with a simple Hello, nothing more'):
             torch_dtype="auto",
             device_map="auto",
         )
-        tokenizer.save_pretrained(local_path)
-        model.save_pretrained(local_path)
+        tokenizer.save_pretrained(LOCAL_PATH)
+        model.save_pretrained(LOCAL_PATH)
 
     # prepare the model input
     messages = [
