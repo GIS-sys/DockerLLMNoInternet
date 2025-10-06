@@ -5,7 +5,8 @@ src/huggingface/**
 src/model_cache/**
 !src/model_cache/.gitkeep
 
-*.tar
+**/*.tar
+**/*.tar.gz
 **/tmp/
 **/.tmp*
 **/tmp*
