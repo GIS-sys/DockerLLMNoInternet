@@ -1,6 +1,7 @@
 import huggingface_hub
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
+print("CUDA", ("is" if torch.cuda.is_available() else "isn't"), "available")
 
 
 # model_name = "Qwen/Qwen3-0.6B"
@@ -8,7 +9,7 @@ model_name = "openai/gpt-oss-20b"
 local_path = "model_cache/" + model_name
 
 
-def main(prompt: str = 'Solve x*2+3=10'):
+def main(prompt: str = 'Answer with a simple Hello, nothing more'):
     try:
         # local
         tokenizer = AutoTokenizer.from_pretrained(local_path)
