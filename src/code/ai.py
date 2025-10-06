@@ -1,3 +1,4 @@
+import gc
 import huggingface_hub
 import torch
 print("CUDA", ("is" if torch.cuda.is_available() else "isn't"), "available")
@@ -20,7 +21,7 @@ class Models:
         if cls.initialized:
             return
         cls.initialized = True
-        cls.load_model(cls.get_models_list()[1])
+        cls.load_model(cls.get_models_list()[0])
 
     @classmethod
     def get_current_model(cls) -> str:
@@ -43,12 +44,22 @@ class Models:
         return PromptResponse(**Models.process(prompt=request.prompt, model_name=request.model_name, max_new_tokens=request.max_new_tokens))
 
     @classmethod
+    def unload_model(cls):
+        cls.model = cls.model.to('cpu')
+        del cls.model
+        del cls.tokenizer
+        torch.cuda.empty_cache()
+        gc.collect()
+        cls.current_model = ""
+
+    @classmethod
     def load_model(cls, model_name: str):
         cls.init()
         if cls.get_current_model() == model_name:
             return
         if cls.get_current_model() != "":
-            raise Exception(f"Can't load a new model {model_name} when the last model {cls.get_current_model()} was loaded. Aborting")
+            cls.unload_model()
+            # raise Exception(f"Can't load a new model {model_name} when the last model {cls.get_current_model()} was loaded. Aborting")
         cls.current_model = model_name
         try:
             # local saved

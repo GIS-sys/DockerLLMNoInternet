@@ -7,5 +7,7 @@ src/model_cache/**
 
 *.tar
 **/tmp/
+**/.tmp*
+**/tmp*
 **/condaenv.*.requirements.txt
 
