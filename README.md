@@ -29,16 +29,18 @@ You need to rerun this only if you change one of the:
 On a machine with access to the internet:
 
 ```bash
-docker run --rm -v ./src/code:/app/run -v ./src/model_cache:/app/model_cache -v ./src/huggingface:/root/.cache/huggingface --gpus all fips-llm python -u -c 'from main import main; main('\''Answer shortly: what is 2+2*2?'\'')'
+docker run --rm -v ./src/code:/app/run -v ./src/model_cache:/app/model_cache -v ./src/huggingface:/root/.cache/huggingface -p 8080:8080 --gpus all fips-llm python -u -c 'from ai import Models; print(Models.process(model_name='\''Qwen/Qwen3-0.6B'\'', max_new_tokens=32768, prompt='\''Answer shortly: what is 2+2*2?'\''))'
 ```
 
 On a machine without the internet:
 
 ```bash
-docker run --rm -v ./src/code:/app/run -v ./src/model_cache:/app/model_cache -v ./src/huggingface:/root/.cache/huggingface --gpus all fips-llm /bin/bash -c "HF_HUB_OFFLINE=1 python -u -c 'from main import main; main('\''Answer shortly: what is 2+2*2?'\'')'"
+docker run --rm -v ./src/code:/app/run -v ./src/model_cache:/app/model_cache -v ./src/huggingface:/root/.cache/huggingface -p 8080:8080 --gpus all fips-llm /bin/bash -c "HF_HUB_OFFLINE=1 python -u -c 'from ai import Models; print(Models.process(model_name='\''Qwen/Qwen3-0.6B'\'', max_new_tokens=32768, prompt='\''Answer shortly: what is 2+2*2?'\''))'"
 ```
 
 On Windows you might need to change ./src to .\src and ./src/huggingface to .\src\huggingface
+
+If running without specific commands, this will launch a web server for interactive use. Go to http://localhost:8080
 
 You need to rerun this only if you change main.py AND this change downloads something in one of the volumes (like src/model_cache/ for models or huggingface/ for transformers cache)
 
