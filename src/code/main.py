@@ -8,12 +8,13 @@ model_name = "Qwen/Qwen3-0.6B"
 # model_name = "openai/gpt-oss-20b"
 
 LOCAL_PATH = "../model_cache/" + model_name
+SAVE_TO_LOCAL = False
 
 
 def main(prompt: str = 'Answer with a simple Hello, nothing more'):
     try:
-        # local
-        tokenizer = AutoTokenizer.from_pretrained(LOCAL_PATH)
+        # local saved
+        tokenizer = AutoTokenizer.from_pretrained(LOCAL_PATH, local_files_only=True)
         model = AutoModelForCausalLM.from_pretrained(
             LOCAL_PATH,
             torch_dtype="auto",
@@ -21,15 +22,26 @@ def main(prompt: str = 'Answer with a simple Hello, nothing more'):
             local_files_only=True,
         )
     except (OSError, huggingface_hub.errors.HFValidationError):
-        # load the tokenizer and the model
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model = AutoModelForCausalLM.from_pretrained(
-            model_name,
-            torch_dtype="auto",
-            device_map="auto",
-        )
-        tokenizer.save_pretrained(LOCAL_PATH)
-        model.save_pretrained(LOCAL_PATH)
+        try:
+            # local cache
+            tokenizer = AutoTokenizer.from_pretrained(model_name, local_files_only=True)
+            model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                torch_dtype="auto",
+                device_map="auto",
+                local_files_only=True,
+            )
+        except (OSError, huggingface_hub.errors.HFValidationError):
+            # load the tokenizer and the model
+            tokenizer = AutoTokenizer.from_pretrained(model_name)
+            model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                torch_dtype="auto",
+                device_map="auto",
+            )
+            if SAVE_TO_LOCAL:
+                tokenizer.save_pretrained(LOCAL_PATH)
+                model.save_pretrained(LOCAL_PATH)
 
     # prepare the model input
     messages = [
