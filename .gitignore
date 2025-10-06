@@ -1,7 +1,11 @@
-*.tar
 **/__pycache__/
+
+src/huggingface/**
+!src/huggingface/.gitkeep
+src/model_cache/**
+!src/model_cache/.gitkeep
+
+*.tar
 **/tmp/
 **/condaenv.*.requirements.txt
-
-**/model_cache/
 

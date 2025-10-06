@@ -4,8 +4,8 @@ import torch
 print("CUDA", ("is" if torch.cuda.is_available() else "isn't"), "available")
 
 
-# model_name = "Qwen/Qwen3-0.6B"
-model_name = "openai/gpt-oss-20b"
+model_name = "Qwen/Qwen3-0.6B"
+# model_name = "openai/gpt-oss-20b"
 
 LOCAL_PATH = "../model_cache/" + model_name
 
