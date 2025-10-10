@@ -41,7 +41,7 @@ docker run --rm -v ./src/code:/app/run -v ./src/model_cache:/app/model_cache -v 
 To run just a web server:
 
 ```bash
-sdocker run --rm -v ./src/code:/app/run -v ./src/model_cache:/app/model_cache -v ./src/huggingface:/root/.cache/huggingface -p 8080:8080 --gpus all fips-llm /bin/bash -c "HF_HUB_OFFLINE=1 uvicorn main:app --host 0.0.0.0 --port 8080"
+docker run --rm -v ./src/code:/app/run -v ./src/model_cache:/app/model_cache -v ./src/huggingface:/root/.cache/huggingface -p 8080:8080 --gpus all fips-llm /bin/bash -c "HF_HUB_OFFLINE=1 uvicorn main:app --host 0.0.0.0 --port 8080"
 ```
 
 On Windows you might need to change ./src to .\src and ./src/huggingface to .\src\huggingface
