@@ -9,7 +9,7 @@ from basemodels import PromptRequest, PromptResponse
 
 
 SAVE_TO_LOCAL = False
-MODELS = ["Qwen/Qwen3-0.6B", "openai/gpt-oss-20b"]
+MODELS = ["deepseek-ai/DeepSeek-R1-Distill-Llama-70B", "Qwen/Qwen3-0.6B", "openai/gpt-oss-20b"]
 
 
 class Models:
