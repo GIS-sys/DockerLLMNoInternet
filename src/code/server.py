@@ -1,11 +1,12 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 import portalocker
 
 from ai import Models
 from basemodels import PromptRequest, PromptResponse
+import json
 
 
 app = FastAPI(title="Local LLM")
@@ -47,6 +48,9 @@ class CustomLock:
                 self._file = None
 
 
+CustomLock().release()
+
+
 @app.post("/process-prompt", response_model=PromptResponse)
 async def process_prompt(request: PromptRequest):
     lock = CustomLock()
@@ -59,6 +63,37 @@ async def process_prompt(request: PromptRequest):
         raise HTTPException(status_code=500, detail=f"Processing error: {str(e)}")
     finally:
         lock.release()
+
+
+@app.post("/process-prompt-stream")
+async def process_prompt_stream(request: PromptRequest):
+    lock = CustomLock()
+    if not lock.acquire():
+        raise HTTPException(status_code=429, detail="Server is busy processing another request. Try again in a few seconds")
+    
+    async def generate():
+        try:
+            generator = Models.process_generator(
+                model_name=request.model_name,
+                max_new_tokens=request.max_new_tokens,
+                prompt=request.prompt
+            )
+            
+            for chunk in generator:
+                if isinstance(chunk, dict):
+                    break
+                yield f"data: {json.dumps({'text': chunk})}\n\n"
+            
+            # Get the final result
+            yield f"data: {json.dumps({'text': str(chunk)})}\n\n"
+            yield f"data: {json.dumps({'thinking': chunk['thinking'], 'final': chunk['final']})}\n\n"
+            
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        finally:
+            lock.release()
+    
+    return StreamingResponse(generate(), media_type="text/plain")
 
 
 @app.get("/", response_class=HTMLResponse)

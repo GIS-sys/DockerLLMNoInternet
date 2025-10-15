@@ -44,7 +44,11 @@ To run just a web server:
 docker run --rm -v ./src/code:/app/run -v ./src/model_cache:/app/model_cache -v ./src/huggingface:/root/.cache/huggingface -p 8080:8080 --gpus all fips-llm /bin/bash -c "HF_HUB_OFFLINE=1 uvicorn main:app --host 0.0.0.0 --port 8080"
 ```
 
-On Windows you might need to change ./src to .\src and ./src/huggingface to .\src\huggingface
+On Windows you might need to change ./src to .\src and ./src/huggingface to .\src\huggingface like this:
+
+```bash
+docker run --rm -v .\src\code:/app/run -v .\src\model_cache:/app/model_cache -v .\src\huggingface:/root/.cache/huggingface -p 8080:8080 --gpus all fips-llm python -u -c 'from ai import Models; print(Models.process(model_name="""Qwen/Qwen3-0.6B""", max_new_tokens=32768, prompt="""Answer shortly: what is 2+2*2?"""))'
+```
 
 If running without specific commands, this will launch a web server for interactive use. Go to http://localhost:8080
 

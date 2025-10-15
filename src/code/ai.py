@@ -2,14 +2,15 @@ import gc
 import huggingface_hub
 import torch
 print("CUDA", ("is" if torch.cuda.is_available() else "isn't"), "available")
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from typing import Dict, Any
+from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
+from typing import Dict, Any, Generator
+from threading import Thread
 
 from basemodels import PromptRequest, PromptResponse
 
 
 SAVE_TO_LOCAL = False
-MODELS = ["deepseek-ai/DeepSeek-R1-Distill-Llama-70B", "Qwen/Qwen3-0.6B", "openai/gpt-oss-20b"]
+MODELS = ["Qwen/Qwen3-0.6B", "openai/gpt-oss-20b", "deepseek-ai/DeepSeek-R1-Distill-Llama-70B"]
 
 
 class Models:
@@ -137,3 +138,43 @@ class Models:
             "final": final,
         }
 
+    @classmethod
+    def process_generator(cls, model_name: str, max_new_tokens: int = 32768, prompt: str = "Answer with a simple Hello, nothing more") -> Generator[str, None, Dict[str, str]]:
+        cls.init()
+        cls.load_model(model_name)
+
+        # Prepare the model input
+        messages = [
+            {"role": "user", "content": prompt}
+        ]
+        text = cls.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True,
+            enable_thinking=True,
+        )
+        model_inputs = cls.tokenizer([text], return_tensors="pt").to(cls.model.device)
+        
+        # Create a streamer
+        streamer = TextIteratorStreamer(cls.tokenizer, skip_prompt=True, skip_special_tokens=True)
+        
+        # Start generation in a separate thread
+        generation_kwargs = dict(**model_inputs, max_new_tokens=max_new_tokens, streamer=streamer)
+        thread = Thread(target=cls.model.generate, kwargs=generation_kwargs)
+        thread.start()
+        
+        # Collect generated text
+        generated_text = ""
+        for new_text in streamer:
+            generated_text += new_text
+            yield generated_text
+        
+        thread.join()
+        
+        # Parse the final response
+        thinking, final = cls.parse_response(model_name=model_name, response=generated_text)
+        
+        yield {
+            "thinking": thinking,
+            "final": final,
+        }
