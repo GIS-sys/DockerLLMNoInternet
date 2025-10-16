@@ -46,7 +46,10 @@ class Models:
 
     @classmethod
     def unload_model(cls):
-        cls.model = cls.model.to('cpu')
+        try:
+            cls.model = cls.model.to('cpu')
+        except Exception as e:
+            print(f"Exception during moving model to cpu: {e}")
         del cls.model
         del cls.tokenizer
         torch.cuda.empty_cache()
@@ -95,9 +98,10 @@ class Models:
 
     @classmethod
     def parse_response(cls, model_name: str, response: str) -> tuple[str, str]:
-        if "<think>" in response and "</think>" in response:
+        if "</think>" in response:
             tmp = response
-            tmp = tmp[tmp.index("<think>") + len("<think>"):]
+            if "<think>" in response:
+                tmp = tmp[tmp.index("<think>") + len("<think>"):]
             thinking = tmp[:tmp.index("</think>")].strip("\n")
             final = tmp[tmp.index("</think>") + len("</think>"):].strip("\n")
             return thinking, final
